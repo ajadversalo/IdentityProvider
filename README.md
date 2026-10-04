@@ -269,6 +269,14 @@ Dev URLs already seeded for the SPA client:
 One App Service for API + UI. SQL on Azure SQL Free (or any SQL Server). There is no Always On on Free; the app idles and cold-starts. That is expected.
 
 1. Create an App Service with .NET 8, and an Azure SQL database.
+
+Windows plan + web app. `az webapp list-runtimes --os-type windows` lists the stack as `dotnet|8`. In PowerShell, wrap with `cmd /c` so `|` is not a pipe:
+
+```powershell
+az appservice plan create --name plan-idp-dev --resource-group rg-idp-dev --sku F1 --is-linux false
+cmd /c "az webapp create --name idp-<yourname> --resource-group rg-idp-dev --plan plan-idp-dev --runtime ""dotnet|8"""
+```
+
 2. Publish:
 
 ```powershell
