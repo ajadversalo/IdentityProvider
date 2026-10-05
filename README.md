@@ -91,7 +91,12 @@ dotnet publish src/IdentityProvider.Web/IdentityProvider.Web.csproj -c Release /
 
 ## OIDC
 
-Seeded public client id: `identity-spa` (implicit consent, PKCE required). That client is this repo’s own React UI. **Another app needs its own client registration** (its own `client_id` and redirect URIs). There is no admin UI yet; add it in seed/config (see below).
+Seeded clients:
+
+- `identity-spa` — public SPA for this repo’s React UI (implicit consent, PKCE required)
+- `northstar` — public SPA for Northstar (implicit consent, PKCE required). Azure Static Web Apps Free cannot use custom Easy Auth, so Northstar talks to this IdP from the browser.
+
+There is no admin UI yet; add more clients in seed/config.
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -230,10 +235,7 @@ The identity provider process must be running while you use the other app.
 ### Not wired yet
 
 - Admin UI to create clients
-- Config list of extra clients (easy next step)
 - Client credentials (machine-to-machine) grant
-
-If you tell me the other app’s type (React, ASP.NET, etc.) and its URL/port, we can seed that client in this repo.
 
 ## Configuration
 
@@ -247,6 +249,9 @@ Edit `src/IdentityProvider.Web/appsettings.json` locally. On Azure, override wit
 | `OpenIddict:RedirectUris` | Semicolon-separated redirect URIs |
 | `OpenIddict:PostLogoutRedirectUris` | Semicolon-separated post-logout URIs |
 | `OpenIddict:CertificatePassword` | Password for the PFX files under `keys/` |
+| `OpenIddict:NorthstarClientId` | Public client id for Northstar (`northstar`) |
+| `OpenIddict:NorthstarRedirectUris` | Semicolon-separated Northstar `/callback/` URIs |
+| `OpenIddict:NorthstarPostLogoutRedirectUris` | Semicolon-separated Northstar `/signin/` URIs |
 | `PublicAppUrl` | Origin used in confirmation and reset links |
 | `Cors:Origins` | Allowed SPA origins |
 | `Identity:RequireConfirmedEmail` | Default `true` |
@@ -292,6 +297,8 @@ OpenIddict__RedirectUris = https://<app>.azurewebsites.net/callback
 OpenIddict__PostLogoutRedirectUris = https://<app>.azurewebsites.net/
 PublicAppUrl = https://<app>.azurewebsites.net
 Cors__Origins__0 = https://<app>.azurewebsites.net
+Cors__Origins__1 = https://northstar.ajhub.ca
+Cors__Origins__2 = https://purple-coast-001ea300f.7.azurestaticapps.net
 OpenIddict__CertificatePassword = <strong secret>
 ```
 

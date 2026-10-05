@@ -135,8 +135,7 @@ builder.Services.AddOpenIddict()
         options.RegisterScopes(Scopes.Email, Scopes.Profile, Scopes.Roles, SeedData.ApiScope);
 
         options.AllowAuthorizationCodeFlow()
-            .AllowRefreshTokenFlow()
-            .RequireProofKeyForCodeExchange();
+            .AllowRefreshTokenFlow();
 
         options.DisableAccessTokenEncryption();
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(30));

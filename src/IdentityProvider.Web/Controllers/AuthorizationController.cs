@@ -151,10 +151,7 @@ public class AuthorizationController : Controller
 
         return SignOut(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-            properties: new AuthenticationProperties
-            {
-                RedirectUri = "/"
-            });
+            properties: new AuthenticationProperties());
     }
 
     [HttpPost("~/connect/token")]

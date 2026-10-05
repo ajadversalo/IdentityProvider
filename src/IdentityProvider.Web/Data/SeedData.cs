@@ -33,13 +33,69 @@ public static class SeedData
             });
         }
 
-        var clientId = configuration["OpenIddict:SpaClientId"] ?? "identity-spa";
+        var spaClientId = configuration["OpenIddict:SpaClientId"] ?? "identity-spa";
+        var spaDescriptor = CreateInteractiveDescriptor(
+            spaClientId,
+            "Identity Provider SPA",
+            ClientTypes.Public,
+            requirePkce: true);
+
+        foreach (var uri in SplitUris(configuration["OpenIddict:RedirectUris"]))
+        {
+            spaDescriptor.RedirectUris.Add(uri);
+        }
+
+        foreach (var uri in SplitUris(configuration["OpenIddict:PostLogoutRedirectUris"]))
+        {
+            spaDescriptor.PostLogoutRedirectUris.Add(uri);
+        }
+
+        await UpsertApplicationAsync(applicationManager, spaDescriptor, clientSecret: null, cancellationToken);
+
+        // Northstar is a public SPA. Azure Static Web Apps Free SKU cannot host custom Easy Auth.
+        var northstarClientId = configuration["OpenIddict:NorthstarClientId"] ?? "northstar";
+        var northstarRedirects = SplitUris(configuration["OpenIddict:NorthstarRedirectUris"]).ToList();
+        if (northstarRedirects.Count == 0)
+        {
+            var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData");
+            logger.LogWarning(
+                "Skipping {ClientId} client seed because OpenIddict:NorthstarRedirectUris is empty.",
+                northstarClientId);
+        }
+        else
+        {
+            var northstarDescriptor = CreateInteractiveDescriptor(
+                northstarClientId,
+                "Northstar",
+                ClientTypes.Public,
+                requirePkce: true);
+
+            foreach (var uri in northstarRedirects)
+            {
+                northstarDescriptor.RedirectUris.Add(uri);
+            }
+
+            foreach (var uri in SplitUris(configuration["OpenIddict:NorthstarPostLogoutRedirectUris"]))
+            {
+                northstarDescriptor.PostLogoutRedirectUris.Add(uri);
+            }
+
+            await UpsertApplicationAsync(applicationManager, northstarDescriptor, clientSecret: null, cancellationToken);
+        }
+    }
+
+    private static OpenIddictApplicationDescriptor CreateInteractiveDescriptor(
+        string clientId,
+        string displayName,
+        string clientType,
+        bool requirePkce)
+    {
         var descriptor = new OpenIddictApplicationDescriptor
         {
             ClientId = clientId,
-            ClientType = ClientTypes.Public,
+            ClientType = clientType,
             ConsentType = ConsentTypes.Implicit,
-            DisplayName = "Identity Provider SPA",
+            DisplayName = displayName,
             Permissions =
             {
                 Permissions.Endpoints.Authorization,
@@ -53,32 +109,39 @@ public static class SeedData
                 Permissions.Scopes.Profile,
                 Permissions.Scopes.Roles,
                 Permissions.Prefixes.Scope + ApiScope
-            },
-            Requirements =
-            {
-                Requirements.Features.ProofKeyForCodeExchange
             }
         };
 
-        foreach (var uri in SplitUris(configuration["OpenIddict:RedirectUris"]))
+        if (requirePkce)
         {
-            descriptor.RedirectUris.Add(uri);
+            descriptor.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
         }
 
-        foreach (var uri in SplitUris(configuration["OpenIddict:PostLogoutRedirectUris"]))
+        return descriptor;
+    }
+
+    private static async Task UpsertApplicationAsync(
+        IOpenIddictApplicationManager applicationManager,
+        OpenIddictApplicationDescriptor descriptor,
+        string? clientSecret,
+        CancellationToken cancellationToken)
+    {
+        var clientId = descriptor.ClientId
+            ?? throw new InvalidOperationException("ClientId is required.");
+
+        if (!string.IsNullOrWhiteSpace(clientSecret))
         {
-            descriptor.PostLogoutRedirectUris.Add(uri);
+            descriptor.ClientSecret = clientSecret;
         }
 
         var existing = await applicationManager.FindByClientIdAsync(clientId, cancellationToken);
         if (existing is null)
         {
             await applicationManager.CreateAsync(descriptor, cancellationToken);
+            return;
         }
-        else
-        {
-            await applicationManager.UpdateAsync(existing, descriptor, cancellationToken);
-        }
+
+        await applicationManager.UpdateAsync(existing, descriptor, cancellationToken);
     }
 
     private static IEnumerable<Uri> SplitUris(string? value)
