@@ -45,20 +45,34 @@ export function DashboardPage() {
   }
 
   return (
-    <section className="card" style={{ maxWidth: 640 }}>
-      <h1>Signed in</h1>
-      <p className="hint">This page calls /api/me with the access token issued by this provider.</p>
-      {error ? <p className="error">{error}</p> : null}
+    <section>
+      {error ? <p className="error banner">{error}</p> : null}
       {me ? (
-        <div className="meta">
-          <div>id: {me.id}</div>
-          <div>email: {me.email}</div>
-          <div>name: {me.displayName}</div>
-          <div>roles: {me.roles.join(", ") || "none"}</div>
-          <div>created: {new Date(me.createdUtc).toLocaleString()}</div>
-        </div>
+        <>
+          <div className="stats">
+            <article className="stat stat-mint">
+              <p className="eyebrow">Account</p>
+              <p className="stat-value">{me.displayName || "Signed in"}</p>
+              <p className="stat-note">Profile from this identity provider</p>
+            </article>
+            <article className="stat stat-cyan">
+              <p className="eyebrow">Email</p>
+              <p className="stat-value">{me.email}</p>
+              <p className="stat-note">{me.emailConfirmed ? "Email confirmed" : "Email not confirmed"}</p>
+            </article>
+            <article className="stat stat-violet">
+              <p className="eyebrow">Roles</p>
+              <p className="stat-value">{me.roles.join(", ") || "None"}</p>
+              <p className="stat-note">Created {new Date(me.createdUtc).toLocaleString()}</p>
+            </article>
+          </div>
+          <p className="hint">Account id {me.id}</p>
+        </>
       ) : (
-        <p className="hint">Loading profile…</p>
+        <section className="card">
+          <h1>Signed in</h1>
+          <p className="hint">Loading profile…</p>
+        </section>
       )}
     </section>
   );
